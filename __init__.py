@@ -80,15 +80,63 @@ DECK_INDEX_TEMPLATE = """
             display: block;
             margin-bottom: 5px;
         }}
+        .navigation {{
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .navigation h2 {{
+            color: #2196F3;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }}
+        .navigation ul {{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }}
+        .navigation li {{
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }}
+        .navigation a {{
+            color: #2196F3;
+            text-decoration: none;
+            display: block;
+        }}
+        .navigation a:hover {{
+            text-decoration: underline;
+        }}
+        .parent-link {{
+            margin-bottom: 10px;
+        }}
+        .parent-link a {{
+            color: #666;
+            text-decoration: none;
+        }}
+        .parent-link a:hover {{
+            color: #2196F3;
+            text-decoration: underline;
+        }}
     </style>
 </head>
 <body>
     <div class="container">
         <h1>{deck_name}</h1>
+        {parent_link}
         <div class="deck-info">
             <div class="card-count">Total Cards: {card_count}</div>
             <div>Export Date: {export_date}</div>
         </div>
+        {navigation}
         <div class="cards">
             {cards_html}
         </div>
@@ -238,6 +286,41 @@ def export_deck_to_html(col: Collection, deck_name: str, export_path: str) -> bo
         card_ids = col.find_cards(f"deck:{deck_name}")
         print(f"Found {len(card_ids)} cards in deck {deck_name}")
         
+        # Get direct child decks only
+        child_decks = []
+        deck_parts = deck_name.split("::")
+        deck_parts_count = len(deck_parts)
+        
+        for d in col.decks.all_names_and_ids():
+            # Check if this is a direct child (exactly one level deeper)
+            if d.name.startswith(deck_name + "::"):
+                child_parts = d.name.split("::")
+                if len(child_parts) == deck_parts_count + 1:
+                    child_decks.append(d.name)
+        
+        # Create navigation HTML
+        navigation_html = ""
+        if child_decks:
+            navigation_html = """
+            <div class="navigation">
+                <h2>Child Decks</h2>
+                <ul>
+            """
+            for child_deck in sorted(child_decks):
+                child_name = child_deck.split("::")[-1]
+                # Use child_name for the link
+                navigation_html += f'<li><a href="{child_name}/index.html">{child_name}</a></li>'
+            navigation_html += """
+                </ul>
+            </div>
+            """
+        
+        # Create parent link HTML
+        parent_link_html = ""
+        if "::" in deck_name:
+            parent_deck_name = deck_name.split("::")[-2]  # Get the parent deck name
+            parent_link_html = f'<div class="parent-link"><a href="../index.html">← Back to {parent_deck_name}</a></div>'
+        
         if not card_ids:
             # Create empty index if no cards
             cards_html = "<p>No cards in this deck.</p>"
@@ -245,7 +328,9 @@ def export_deck_to_html(col: Collection, deck_name: str, export_path: str) -> bo
                 deck_name=deck_name,
                 card_count=0,
                 export_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                cards_html=cards_html
+                cards_html=cards_html,
+                navigation=navigation_html,
+                parent_link=parent_link_html
             )
             index_path = os.path.join(export_path, "index.html")
             with open(index_path, "w", encoding="utf-8") as f:
@@ -316,7 +401,9 @@ def export_deck_to_html(col: Collection, deck_name: str, export_path: str) -> bo
             deck_name=deck_name,
             card_count=len(card_ids),
             export_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            cards_html="\n".join(cards_html)
+            cards_html="\n".join(cards_html),
+            navigation=navigation_html,
+            parent_link=parent_link_html
         )
         
         # Write index.html
