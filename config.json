@@ -1,6 +1,34 @@
 {
-    "include_scheduling": true,
-    "include_media": true,
-    "export_format": "apkg",
-    "last_export_path": ""
+    "export_options": {
+        "apkg": {
+            "include_scheduling": true,
+            "include_media": true,
+            "include_tags": true,
+            "include_deck_config": true
+        },
+        "html": {
+            "split_screen": true,
+            "theme": "light",
+            "show_field_names": true
+        }
+    },
+    "folder_structure": {
+        "sanitize": true,
+        "allowed_chars": [" ", "-", "_"],
+        "max_depth": 10
+    },
+    "media": {
+        "media_folder": "media",
+        "max_image_size": 1920,
+        "image_quality": 85
+    },
+    "logging": {
+        "create_hierarchy_log": true,
+        "auto_open_log": true,
+        "log_level": "INFO"
+    },
+    "ui": {
+        "show_progress": true,
+        "menu_location": "tools"
+    }
 } 

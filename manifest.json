@@ -1,9 +1,11 @@
 {
-    "package": "deck_exporter",
     "name": "Deck Exporter",
-    "mod": 1,
-    "min_point_version": 0,
-    "max_point_version": 0,
-    "branch_index": 0,
-    "conflicts": []
+    "package": "deck_exporter",
+    "homepage": "https://github.com/yourusername/anki-deck-exporter",
+    "author": "Your Name",
+    "version": "0.1.0",
+    "min_anki_version": "23.10",
+    "max_anki_version": "23.10",
+    "conflicts": [],
+    "mod": 1
 } 

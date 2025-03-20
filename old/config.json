@@ -1,0 +1,6 @@
+{
+    "include_scheduling": true,
+    "include_media": true,
+    "export_format": "apkg",
+    "last_export_path": ""
+} 
