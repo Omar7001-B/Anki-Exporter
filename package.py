@@ -5,8 +5,8 @@ This script creates a proper .ankiaddon file and can install it directly in Anki
 
 Usage:
   python package.py           - Package the addon and save in the build folder
-  python package.py -i        - Package the addon, save in the build folder, and install in Anki
-  python package.py --install - Package the addon, save in the build folder, and install in Anki
+  python package.py -i        - Package the addon and trigger installation in Anki
+  python package.py --install - Package the addon and trigger installation in Anki
   python package.py -l        - List the addon structure
   python package.py --list    - List the addon structure
 """
@@ -18,6 +18,7 @@ import subprocess
 import platform
 import sys
 import tempfile
+import json
 
 def get_anki_addon_folder():
     """Get the Anki addons folder based on the operating system."""
@@ -29,11 +30,10 @@ def get_anki_addon_folder():
         return os.path.join(os.path.expanduser('~'), '.local', 'share', 'Anki2', 'addons21')
 
 def get_addon_id():
-    """Get the addon ID from the manifest.json file or user input."""
+    """Get the addon ID from the manifest.json file."""
     manifest_path = os.path.join(os.path.dirname(__file__), 'manifest.json')
     if os.path.exists(manifest_path):
         try:
-            import json
             with open(manifest_path, 'r', encoding='utf-8') as f:
                 manifest = json.load(f)
                 # Check if manifest has an ID field
@@ -42,13 +42,25 @@ def get_addon_id():
         except Exception as e:
             print(f"Error reading manifest.json: {e}")
     
-    # If we get here, either no manifest or no ID in manifest
-    addon_id = input("Enter the addon ID (if you have one) or leave blank to generate: ").strip()
-    if not addon_id:
-        import uuid
-        addon_id = str(uuid.uuid4()).replace('-', '')
-        print(f"Generated new addon ID: {addon_id}")
-    return addon_id
+    print("Error: No addon ID found in manifest.json")
+    return None
+
+def install_addon(addon_path):
+    """Trigger the .ankiaddon file to install in Anki."""
+    try:
+        # Open the .ankiaddon file with the default application
+        # This will trigger Anki's built-in addon installer
+        if platform.system() == 'Windows':
+            os.startfile(addon_path)
+        elif platform.system() == 'Darwin':  # macOS
+            subprocess.call(['open', addon_path])
+        else:  # Linux and other Unix-like
+            subprocess.call(['xdg-open', addon_path])
+        print(f"Addon installation triggered. Please follow Anki's installation prompts.")
+        return True
+    except Exception as e:
+        print(f"Error triggering addon installation: {e}")
+        return False
 
 def package_addon(output_path=None, install=False):
     """
@@ -75,9 +87,8 @@ def package_addon(output_path=None, install=False):
         '.git',
         '.gitignore',
         'build',
-        'deck_exporter.ankiaddon',
-        'test',
-        'old'
+        'old',
+        'deck_exporter.ankiaddon'
     ]
     
     # Get all files in the current directory recursively
@@ -126,65 +137,8 @@ def package_addon(output_path=None, install=False):
     if install:
         install_addon(output_path)
     else:
-        # Open the file with the default application
-        open_file(output_path)
         print(f"Add-on packaged in {output_path}")
         print(f"You can now install it in Anki by going to Tools > Add-ons > Install from file")
-
-def install_addon(addon_path):
-    """Install the add-on directly in Anki."""
-    addon_id = get_addon_id()
-    anki_addons_folder = get_anki_addon_folder()
-    
-    if not os.path.exists(anki_addons_folder):
-        print(f"Anki addons folder not found at {anki_addons_folder}")
-        print("Please make sure Anki is installed on your system.")
-        return False
-    
-    addon_folder = os.path.join(anki_addons_folder, addon_id)
-    
-    # Remove existing addon if it exists
-    if os.path.exists(addon_folder):
-        try:
-            shutil.rmtree(addon_folder)
-            print(f"Removed existing addon at {addon_folder}")
-        except Exception as e:
-            print(f"Error removing existing addon: {e}")
-            print("Please close Anki and try again.")
-            return False
-    
-    # Extract the addon to the addons folder
-    try:
-        os.makedirs(addon_folder, exist_ok=True)
-        with zipfile.ZipFile(addon_path, 'r') as zipf:
-            zipf.extractall(addon_folder)
-        print(f"Addon installed successfully at {addon_folder}")
-        
-        # Write a meta.json file to include the addon ID
-        meta_path = os.path.join(anki_addons_folder, f"{addon_id}.json")
-        import json
-        with open(meta_path, 'w', encoding='utf-8') as f:
-            json.dump({"name": "Deck Exporter", "mod": 0}, f)
-        
-        print("Restart Anki to use the addon.")
-        return True
-    except Exception as e:
-        print(f"Error installing addon: {e}")
-        return False
-
-def open_file(file_path):
-    """Open a file with the default associated application"""
-    try:
-        if platform.system() == 'Windows':
-            os.startfile(file_path)
-        elif platform.system() == 'Darwin':  # macOS
-            subprocess.call(['open', file_path])
-        else:  # Linux and other Unix-like
-            subprocess.call(['xdg-open', file_path])
-        print(f"Opened {file_path} with the default application")
-    except Exception as e:
-        print(f"Error opening the file: {e}")
-        print(f"Please manually open {os.path.abspath(file_path)}")
 
 def list_addon_structure():
     """Display the structure of the addon being packaged"""
@@ -225,7 +179,7 @@ if __name__ == "__main__":
         else:
             print("Unknown option. Available options:")
             print("  -l, --list    : List addon structure")
-            print("  -i, --install : Package and install addon in Anki")
+            print("  -i, --install : Package and trigger addon installation")
             print("  No option     : Just package the addon")
     else:
         package_addon() 
