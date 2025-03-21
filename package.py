@@ -4,9 +4,9 @@ Package Anki Deck Exporter Add-on
 This script creates a proper .ankiaddon file and can install it directly in Anki.
 
 Usage:
-  python package.py           - Just package the addon
-  python package.py -i        - Package and install in Anki
-  python package.py --install - Package and install in Anki
+  python package.py           - Package the addon and save in the build folder
+  python package.py -i        - Package the addon, save in the build folder, and install in Anki
+  python package.py --install - Package the addon, save in the build folder, and install in Anki
   python package.py -l        - List the addon structure
   python package.py --list    - List the addon structure
 """
@@ -55,12 +55,15 @@ def package_addon(output_path=None, install=False):
     Package the add-on into a .ankiaddon file.
     According to Anki docs, the zip should NOT include the top-level folder.
     """
-    # Get parent directory (where the add-on is located)
+    # Get current directory (where the add-on is located)
     current_dir = os.path.abspath(os.path.dirname(__file__))
-    parent_dir = os.path.dirname(current_dir)
+    
+    # Create build directory if it doesn't exist
+    build_dir = os.path.join(current_dir, "build")
+    os.makedirs(build_dir, exist_ok=True)
     
     if output_path is None:
-        output_path = os.path.join(parent_dir, "deck_exporter.ankiaddon")
+        output_path = os.path.join(build_dir, "deck_exporter.ankiaddon")
     
     print(f"Packaging addon from: {current_dir}")
     print(f"Output file will be: {output_path}")
@@ -71,7 +74,10 @@ def package_addon(output_path=None, install=False):
         'package.py',
         '.git',
         '.gitignore',
-        'deck_exporter.ankiaddon'
+        'build',
+        'deck_exporter.ankiaddon',
+        'test',
+        'old'
     ]
     
     # Get all files in the current directory recursively
@@ -122,6 +128,7 @@ def package_addon(output_path=None, install=False):
     else:
         # Open the file with the default application
         open_file(output_path)
+        print(f"Add-on packaged in {output_path}")
         print(f"You can now install it in Anki by going to Tools > Add-ons > Install from file")
 
 def install_addon(addon_path):
@@ -186,7 +193,7 @@ def list_addon_structure():
     print(f"Addon directory structure for: {current_dir}")
     print("=" * 50)
     
-    excluded = ['__pycache__', '.git', '.gitignore']
+    excluded = ['__pycache__', '.git', '.gitignore', 'build']
     
     def print_dir(path, prefix=""):
         items = os.listdir(path)
