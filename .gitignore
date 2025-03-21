@@ -37,7 +37,7 @@ ENV/
 .pydevproject
 
 # Anki specific
-*.ankiaddon
+# *.ankiaddon
 meta.json
 
 # Operating System
